@@ -7,7 +7,6 @@ from PyQt5 import QtCore, QtWidgets as qtw, QtGui
 class MyWidget(qtw.QWidget):
     def __init__(self):
         super().__init__()
-
         self.setWindowTitle('Civa INS Flight Plan Converter v0.1')
 
         applicationPath = None
