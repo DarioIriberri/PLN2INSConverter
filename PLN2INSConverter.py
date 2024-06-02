@@ -178,41 +178,41 @@ class MyWidget(qtw.QWidget):
             msg.exec_()
 
             return
-    #try:
-        adeuDir = str(qtw.QFileDialog.getExistingDirectory(self, 'Select ADEU Directory', self.adeuDir)) + '/'
-        if adeuDir == None or adeuDir == '/':
-            return
-        self.adeuDir = adeuDir
+        try:
+            adeuDir = str(qtw.QFileDialog.getExistingDirectory(self, 'Select ADEU Directory', self.adeuDir)) + '/'
+            if adeuDir == None or adeuDir == '/':
+                return
+            self.adeuDir = adeuDir
 
-        fileNumber = 0
-        filesSaved = 0
-        title = ''
-        self.convertedText.split('\n\n')
-        for block in self.convertedText.split('\n\n'):
-            fileText = getBlockHeader(self, block, title, fileNumber)
-            if fileText == None:
-                continue
-            fileNumber += 1
-            fileText += block
-            lines =  list(filter(None, block.split('\n')))
-            firstWPIndex = lines[0][0]
-            lastWPIndex = lines[-1][0]
-            fileName = self.departureID + self.destinationID + ' ' + str(fileNumber) + '-' + firstWPIndex + lastWPIndex + '-' + self.firstWP + '-' + self.lastWP +'.awc'
-            filesSaved = saveFile(fileName, fileText, filesSaved)
+            fileNumber = 0
+            filesSaved = 0
+            title = ''
+            self.convertedText.split('\n\n')
+            for block in self.convertedText.split('\n\n'):
+                fileText = getBlockHeader(self, block, title, fileNumber)
+                if fileText == None:
+                    continue
+                fileNumber += 1
+                fileText += block
+                lines =  list(filter(None, block.split('\n')))
+                firstWPIndex = lines[0][0]
+                lastWPIndex = lines[-1][0]
+                fileName = self.departureID + self.destinationID + ' ' + str(fileNumber) + '-' + firstWPIndex + lastWPIndex + '-' + self.firstWP + '-' + self.lastWP +'.awc'
+                filesSaved = saveFile(fileName, fileText, filesSaved)
 
-        msg = qtw.QMessageBox()
-        msg.setIcon(qtw.QMessageBox.Information)
-        msg.setText(str(filesSaved) + ' files succesfully saved.')
-        #msg.setInformativeText("The selected file doesn't have the expected format")
-        msg.setWindowTitle('Success!')
-        msg.exec_()
-    #except:
-    #    msg = qtw.QMessageBox()
-    #    msg.setIcon(qtw.QMessageBox.Critical)
-    #    msg.setText('Something went wrong')
-    #    #msg.setInformativeText("The selected file doesn't have the expected format")
-    #    msg.setWindowTitle('Error')
-    #    msg.exec_()
+            msg = qtw.QMessageBox()
+            msg.setIcon(qtw.QMessageBox.Information)
+            msg.setText(str(filesSaved) + ' files succesfully saved.')
+            #msg.setInformativeText("The selected file doesn't have the expected format")
+            msg.setWindowTitle('Success!')
+            msg.exec_()
+        except:
+            msg = qtw.QMessageBox()
+            msg.setIcon(qtw.QMessageBox.Critical)
+            msg.setText('Something went wrong')
+            #msg.setInformativeText("The selected file doesn't have the expected format")
+            msg.setWindowTitle('Error')
+            msg.exec_()
 
 
 if __name__ == '__main__':
