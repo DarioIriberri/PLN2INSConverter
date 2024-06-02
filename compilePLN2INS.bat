@@ -1,0 +1,1 @@
+pyinstaller PLN2INSConverter.py --onefile --noconsole --icon insIcon.ico --add-data "insIcon.ico;."
