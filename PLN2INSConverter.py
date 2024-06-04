@@ -17,18 +17,19 @@ class MyWidget(qtw.QWidget):
         #print('applicationPath ======================= ' + applicationPath)
         self.setWindowIcon(QtGui.QIcon(os.path.join(applicationPath, "insIcon.ico")))
 
-        self.setGeometry(900,200,300,900)
+        self.setGeometry(900,200,320,900)
 
         self.fltTextBox = qtw.QPlainTextEdit()
         self.fltTextBox.setReadOnly(True)
         self.checkPartial = qtw.QCheckBox("Use 1-5 and 6-9 waypoint splits")
+        self.checkPartial.setChecked(True)
         self.buttonOpenPLN = qtw.QPushButton('Open and Convert PLN file')
         self.comboBoxWPxFile = qtw.QComboBox(self)
-        self.comboBoxWPxFile.addItems(['9 waypoints per file', '8 waypoints per file',
-                                       '7 waypoints per file', '6 waypoints per file',
-                                       '5 waypoints per file', '4 waypoints per file'])
+        self.comboBoxWPxFile.addItems(['9 waypoints per card', '8 waypoints per card',
+                                       '7 waypoints per card', '6 waypoints per card',
+                                       '5 waypoints per card', '4 waypoints per card'])
         self.comboBoxWPxFile.setCurrentIndex(2)
-        self.buttonConvert = qtw.QPushButton('Save ADEU Files')
+        self.buttonConvert = qtw.QPushButton('Save ADEU Cards')
 
         self.statusBar = qtw.QStatusBar(self)
         self.statusBar.showMessage('No flight plan loaded.')
@@ -49,8 +50,11 @@ class MyWidget(qtw.QWidget):
         self.fileName = None
         self.convertedText = None
         self.numberOfBlocks = 0
+        self.checkPartialChanged()
 
         self.adeuDir = 'C:/Program Files (x86)/Microsoft Games/Microsoft Flight Simulator X/Civa/ADEU/'
+        if getattr(sys, 'frozen', False):
+            self.adeuDir = '.'
 
     def checkPartialChanged(self):
         if self.checkPartial.isChecked():
@@ -138,7 +142,7 @@ class MyWidget(qtw.QWidget):
         plnTxt = self.fltTextBox.toPlainText()
         statusTxt = 'No blocks found.'
         if plnTxt != None and plnTxt != '':
-            statusTxt = '%d ADEU files will be created.' % (len(plnTxt.split('\n\n')) - 1)
+            statusTxt = '%d ADEU cards will be created.' % (len(plnTxt.split('\n\n')) - 1)
 
         self.statusBar.showMessage(statusTxt)
 
