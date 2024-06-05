@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 __author__ = 'Dario'
-import sys, os, io
+import sys, os
 import xml.etree.ElementTree as et
-from PyQt5 import QtCore, QtWidgets as qtw, QtGui
+from PyQt5 import QtWidgets as qtw, QtGui
 
-class MyWidget(qtw.QWidget):
+class PLN2INSWidget(qtw.QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle('Civa INS Flight Plan Converter v0.1')
@@ -14,7 +14,6 @@ class MyWidget(qtw.QWidget):
             applicationPath = sys._MEIPASS
         elif __file__:
             applicationPath = os.path.dirname(__file__)
-        #print('applicationPath ======================= ' + applicationPath)
         self.setWindowIcon(QtGui.QIcon(os.path.join(applicationPath, "insIcon.ico")))
 
         self.setGeometry(900,200,320,900)
@@ -49,6 +48,8 @@ class MyWidget(qtw.QWidget):
         self.comboBoxWPxFile.currentIndexChanged.connect(self.comboChanged)
         self.fileName = None
         self.convertedText = None
+        self.departureID = None
+        self.destinationID = None
         self.numberOfBlocks = 0
         self.checkPartialChanged()
 
@@ -83,7 +84,7 @@ class MyWidget(qtw.QWidget):
             coordinate = degrees + '*' + '%04.1f' % (float(parts2[1]) + round(float(parts[1]) / 60,1))
             return coordinate
 
-        if self.fileName == '' or self.fileName == None:
+        if self.fileName == '' or self.fileName is None:
             return
 
         self.convertedText = ''
@@ -91,7 +92,6 @@ class MyWidget(qtw.QWidget):
             self.departureID = self.destinationID = None
             tree = et.parse(self.fileName)
             root = tree.getroot()
-            wpID = None
             wpCount = 0
             for child in root[1]:
                 if child.tag.lower() == 'departureid':
@@ -101,17 +101,14 @@ class MyWidget(qtw.QWidget):
                     self.convertedText += '; ' + self.departureID + ' to ' + self.destinationID + '\n\n'
                 if child.tag == 'ATCWaypoint':
                     wpID = child.attrib['id']
-                    for wpchild in child:
-                        validWP = True
-                        if wpchild.tag == 'ATCWaypointType':
-                            if wpchild.text == 'Airport' or wpchild.text == 'User':
-                                validWP = False
+                    for wpChild in child:
+                        if wpChild.tag == 'ATCWaypointType':
+                            if wpChild.text == 'Airport' or wpChild.text == 'User':
                                 break
-                            if not validWP: break
-                            for wpchild2 in child:
-                                if wpchild2.tag == 'WorldPosition':
-                                    latitude = formatCoordinate(wpchild2.text.split(',')[0])
-                                    longitude = formatCoordinate(wpchild2.text.split(',')[1])
+                            for wpChild2 in child:
+                                if wpChild2.tag == 'WorldPosition':
+                                    latitude = formatCoordinate(wpChild2.text.split(',')[0])
+                                    longitude = formatCoordinate(wpChild2.text.split(',')[1])
                                     wpIndex = 1+(wpCount % 9)
                                     wpLine = str(wpIndex) + ' ' + latitude + ' ' + longitude + ' ; ' + wpID
                                     if self.checkPartial.isChecked():
@@ -141,16 +138,16 @@ class MyWidget(qtw.QWidget):
     def updateStatusBar(self):
         plnTxt = self.fltTextBox.toPlainText()
         statusTxt = 'No blocks found.'
-        if plnTxt != None and plnTxt != '':
+        if plnTxt is not None and plnTxt != '':
             statusTxt = '%d ADEU cards will be created.' % (len(plnTxt.split('\n\n')) - 1)
 
         self.statusBar.showMessage(statusTxt)
 
     #@QtCore.pyqtSlot()
     def getPLNFile(self):
-        self.fileName = qtw.QFileDialog.getOpenFileName(self, 'Open File',
+        self.fileName = qtw.QFileDialog.getOpenFileName(self.parent(), 'Open File',
                                        os.getenv('USERPROFILE') + '/Documents/Flight Simulator X Files',
-                                       ('Text (*.pln)'))[0]
+                                       'Text (*.pln)')[0]
 
         #self.fltText=io.open(fileName[0], mode='r', encoding='utf-8').read()
         self.fltTextBox.setPlainText(self.convertPLN())
@@ -159,50 +156,47 @@ class MyWidget(qtw.QWidget):
 
     #@QtCore.pyqtSlot()
     def saveADEUFiles(self):
-        def getBlockHeader(self, block, title, fileNumber):
-            if block[0:1] == ';':
-                title = block + '\n'
+        def getBlockHeader(parent, blockP, fileNumberP):
+            if blockP[0:1] == ';':
                 return None
-            self.firstWP = block.split('\n')[0].split(';')[1].replace(' ', '')
-            self.lastWP = block.split(';')[len(block.split(';'))-1].replace(' ', '').replace('\n', '')
-            return title + '; File #' + str(fileNumber) + ' - ' + self.firstWP + ' to ' + self.lastWP + '\n;\n'
+            parent.firstWP = blockP.split('\n')[0].split(';')[1].replace(' ', '')
+            parent.lastWP = blockP.split(';')[len(blockP.split(';'))-1].replace(' ', '').replace('\n', '')
+            return '; File #' + str(fileNumberP) + ' - ' + parent.firstWP + ' to ' + parent.lastWP + '\n;\n'
 
-        def saveFile(fileName, fileText, filesSaved):
-            f = open(self.adeuDir + fileName, 'w')
-            f.write(fileText)
+        def saveFile(fileNameP, fileTextP, filesSavedP):
+            f = open(self.adeuDir + fileNameP, 'w')
+            f.write(fileTextP)
             f.close()
-            return filesSaved + 1
+            return filesSavedP + 1
 
-        if self.convertedText == None or self.convertedText == '':
+        if self.convertedText is None or self.convertedText == '':
             msg = qtw.QMessageBox()
             msg.setIcon(qtw.QMessageBox.Warning)
             msg.setText('Nothing to save')
             #msg.setInformativeText("The selected file doesn't have the expected format")
             msg.setWindowTitle('Warning')
             msg.exec_()
-
             return
         try:
-            adeuDir = str(qtw.QFileDialog.getExistingDirectory(self, 'Select ADEU Directory', self.adeuDir)) + '/'
-            if adeuDir == None or adeuDir == '/':
+            adeuDir = str(qtw.QFileDialog(self).getExistingDirectory(self, 'Select ADEU Directory', self.adeuDir)) + '/'
+            if adeuDir is None or adeuDir == '/':
                 return
             self.adeuDir = adeuDir
 
-            fileNumber = 0
+            fileNumber = 1
             filesSaved = 0
-            title = ''
             self.convertedText.split('\n\n')
             for block in self.convertedText.split('\n\n'):
-                fileText = getBlockHeader(self, block, title, fileNumber)
-                if fileText == None:
+                fileText = getBlockHeader(self, block, fileNumber)
+                if fileText is None:
                     continue
-                fileNumber += 1
                 fileText += block
                 lines =  list(filter(None, block.split('\n')))
                 firstWPIndex = lines[0][0]
                 lastWPIndex = lines[-1][0]
                 fileName = self.departureID + self.destinationID + ' ' + str(fileNumber) + '-' + firstWPIndex + lastWPIndex + '-' + self.firstWP + '-' + self.lastWP +'.awc'
                 filesSaved = saveFile(fileName, fileText, filesSaved)
+                fileNumber += 1
 
             msg = qtw.QMessageBox()
             msg.setIcon(qtw.QMessageBox.Information)
@@ -222,7 +216,7 @@ class MyWidget(qtw.QWidget):
 if __name__ == '__main__':
     app = qtw.QApplication([])
 
-    widget = MyWidget()
+    widget = PLN2INSWidget()
     #widget.resize(800, 600)
     widget.show()
 
